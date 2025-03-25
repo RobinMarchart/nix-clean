@@ -1,21 +1,24 @@
 {
   lib,
   rustPlatform,
+  stdenv,
 }:
 let
   pname = "nix-clean";
   version = "1.0.0";
-  fileset = lib.fileset.unions [
-    ./Cargo.lock
-    ./Cargo.toml
-    ./src
-  ];
   src = lib.fileset.toSource {
     root = ./.;
-    inherit fileset;
+    fileset = lib.fileset.unions [
+      ./Cargo.lock
+      ./Cargo.toml
+      ./src
+    ];
   };
 in
-rustPlatform.buildRustPackage {
-  inherit src pname version;
-  cargoLock.lockFile = ./Cargo.lock;
-}
+(rustPlatform.buildRustPackage.override {
+  inherit stdenv;
+})
+  {
+    inherit src pname version;
+    cargoLock.lockFile = ./Cargo.lock;
+  }

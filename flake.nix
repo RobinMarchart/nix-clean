@@ -31,30 +31,40 @@
           rustc = toolchain_dev;
           cargo = toolchain_dev;
         };
-        nix-clean = pkgs.callPackage ./nix-clean.nix { };
+        stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
+        nix-clean = pkgs.callPackage ./nix-clean.nix { inherit stdenv; };
       in
       {
         packages = {
           default = nix-clean;
           inherit nix-clean;
         };
-        devShells.default = pkgs.mkShell {
-          inputsFrom = [
-            (nix-clean.override { rustPlatform = platform_dev; })
-          ];
-          buildInputs = [
-            pkgs.cargo-nextest
-            pkgs.cargo-audit
-            pkgs.rust-bin.nightly.latest.rust-analyzer
-          ];
-        };
+        devShells.default =
+          pkgs.mkShell.override
+            {
+              inherit stdenv;
+            }
+            {
+              inputsFrom = [
+                (nix-clean.override { rustPlatform = platform_dev; })
+              ];
+              buildInputs = [
+                pkgs.cargo-audit
+                pkgs.rust-bin.nightly.latest.rust-analyzer
+              ];
+            };
       }
     )
     // (
       let
-        nix-clean = final: prev: {
-          nix-clean = final.callPackage ./nix-clean.nix { };
-        };
+        nix-clean =
+          final: prev:
+          let
+            stdenv = final.stdenvAdapters.useMoldLinker final.clangStdenv;
+          in
+          {
+            nix-clean = final.callPackage ./nix-clean.nix { inherit stdenv; };
+          };
       in
       {
         overlays = {
